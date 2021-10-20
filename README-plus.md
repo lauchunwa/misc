@@ -53,9 +53,50 @@ dnmp
 # 2.快速使用
 
 环境准备
-[Git](https://www.liaoxuefeng.com/wiki/896043488029600/896067074338496)
-[Docker](https://docs.docker.com/install/)
-[Docker-compose](https://docs.docker.com/install/#install-compose)
+Git Docker Docker-compose
+
+<details>
+<summary>点击查看详细内容</summary>
+
+## Ubuntu 18.04
+1.更换源（不换可忽略）
+```
+cp /etc/apt/sources.list /etc/apt/sources.list.bak
+sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+apt-get update
+```
+2.安装Git
+```
+apt-get install git
+```
+3.安装依赖包
+```
+apt-get install curl software-properties-common -y
+```
+4.添加GPG密钥
+```
+curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg | apt-key add -
+```
+5.添加软件源
+```
+add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+```
+6.安装docker和docker-compose
+```
+apt-get install docker-ce -y
+apt-get install docker-compose -y
+```
+7.添加服务和启动docker
+```
+systemctl enable docker
+systemctl start docker
+```
+8.添加组和加入组
+```
+groupadd docker
+usermod -aG docker $USER
+```
+</details>
 
 ## 2.1 安装
 ```

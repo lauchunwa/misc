@@ -17,7 +17,7 @@ services:
         expose:
           - ${PHP_CGI_PORT}
         volumes:
-          - ./php/conf/php-fpm.d/:/usr/local/etc/php-fpm.d/
+          - ./php/conf/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
           - ./php/conf/php.ini:/usr/local/etc/php/php.ini
           - ./php/www/:${SCRIPT_DIR}
           - ./php/logs/:/var/log/php/
@@ -67,6 +67,21 @@ services:
         restart: always
         networks:
           - default
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:${PHPMYADMIN_VERSION}
+        ports:
+          - ${PHPMYADMIN_PORT}:80
+        volumes:
+          - ./phpmyadmin/conf/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
+          - ./phpmyadmin/conf/conf.d/phpmyadmin-misc.ini:/usr/local/etc/php/conf.d/phpmyadmin-misc.ini
+        environment:
+            PMA_HOST: ${PMA_HOST}
+            PMA_PORT: ${PMA_PORT}
+            PMA_USER: ${PMA_USER}
+            PMA_PASSWORD: ${PMA_PASSWORD}
+        restart: always
+        networks:
+          - default
 #     mysql-slave:
 #         image: mysql:${MYSQL_VERSION}
 #         ports:
@@ -92,6 +107,15 @@ services:
         restart: always
         networks:
           - default
+#     phpredisadmin:
+#         image: erikdubbelboer/phpredisadmin:${PHPREDISADMIN_VERSION}
+#         ports:
+#           - ${PHPREDISADMIN_PORT}:80
+#         environment:
+#             REDIS_1_HOST: ${REDIS_1_HOST}
+#             REDIS_1_PORT: ${REDIS_1_PORT}
+#         networks:
+#           - default
 #     mongodb:
 #         image: mongo:${MONGODB_VERSION}
 #         ports:
@@ -104,6 +128,16 @@ services:
 #         restart: always
 #         networks:
 #           - default
+#     adminmongo:
+#         image: mrvautin/adminmongo:${ADMINMONGO_VERSION}
+#         ports:
+#           - "${ADMINMONGO_PORT}:1234"
+#         environment:
+#             HOST: ${HOST}
+#             DB_HOST: ${DB_HOST}
+#             DB_PORT: ${DB_PORT}
+#         networks:
+#             - default
 #     memcached:
 #         image: memcached:${MEMCACHED_VERSION}-alpine
 #         ports:
@@ -142,8 +176,6 @@ services:
 #         environment:
 #             ES_JAVA_OPTS: -Xms256m -Xmx256m
 #             discovery.type: single-node
-#         #     cluster.name: docker-cluster
-#         #     network.host: 0.0.0.0
 #         # command: plugin install mobz/elasticsearch-head
 #         restart: always
 #         networks:
@@ -153,9 +185,9 @@ services:
 #         ports:
 #           - ${LOGSTASH_WEB_PORT}
 #           - ${LOGSTASH_CLI_PORT}
-#         # volumes:
-#         #   - ./logstash/conf/logstash.yml:/etc/logstash/logstash.yml
-#         #   - ./logstash/conf/jvm.options:/etc/logstash/jvm.options
+#         volumes:
+#           - ./logstash/conf/logstash.yml:/etc/logstash/logstash.yml
+#           - ./logstash/conf/jvm.options:/etc/logstash/jvm.options
 #         # command: logstash-plugin update logstash-input-beats
 #         restart: always
 #         depends_on:
@@ -164,12 +196,8 @@ services:
 #         image: kibana:${KIBANA_VERSION}
 #         ports:
 #           - ${KIBANA_WEB_PORT}
-#         # volumes:
-#         #   - ./kibana/conf/kibana.yml:/etc/kibana/kibana.yml
-#         # environment:
-#         #     NODE_OPTIONS: --max-old-space-size=256
-#         #     server.host: 0.0.0.0
-#         #     elasticsearch.hosts: http://elasticsearch:9200
+#         volumes:
+#           - ./kibana/conf/kibana.yml:/etc/kibana/kibana.yml
 #         restart: always
 #         depends_on:
 #           - elasticsearch

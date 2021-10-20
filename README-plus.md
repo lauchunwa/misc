@@ -398,11 +398,13 @@ docker rm $(docker stop tmp-elasticsearch)
 ```
 改动
 ```
-# cat config/elasticsearch.yml
+# cat elasticsearch/conf/elasticsearch.yml 
 cluster.name: "docker-cluster"
 network.host: 0.0.0.0
+http.cors.enabled: true
+http.cors.allow-origin: "*"
 
-# egrep -n '\-Xm' config/jvm.options
+# egrep -n '\-Xm' elasticsearch/conf/jvm.options
 22:-Xms256m
 23:-Xmx256m
 ```
@@ -417,11 +419,11 @@ docker rm $(docker stop tmp-logstash)
 ```
 改动
 ```
-# cat config/logstash.yml
+# cat logstash/conf/logstash.yml
 http.host: "0.0.0.0"
 xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 
-# egrep -n '\-Xm' config/jvm.options
+# egrep -n '\-Xm' logstash/conf/jvm.options
 6:-Xms256m
 7:-Xmx256m
 ```
@@ -435,11 +437,43 @@ docker rm $(docker stop tmp-kibana)
 ```
 改动
 ```
-# egrep -nv '^$|#' config/kibana.yml
+# egrep -nv '^$|#' kibana/conf/kibana.yml
 6:server.name: kibana
 7:server.host: "0"
 8:elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 9:xpack.monitoring.ui.container.elasticsearch.enabled: true
+```
+
+## 3.11 PHPMyAdmin
+复制
+```
+docker run -d --name tmp-phpmyadmin phpmyadmin/phpmyadmin:latest
+docker cp tmp-phpmyadmin:/etc/phpmyadmin/config.inc.php ./phpmyadmin/conf/config.inc.php
+docker cp tmp-phpmyadmin:/usr/local/etc/php/conf.d/phpmyadmin-misc.ini ./phpmyadmin/conf/conf.d/phpmyadmin-misc.ini
+docker rm $(docker stop tmp-phpmyadmin)
+```
+改动
+```
+# cat phpmyadmin/conf/conf.d/phpmyadmin-misc.ini 
+allow_url_fopen = Off
+max_execution_time = 600
+memory_limit = 512M
+```
+
+## 3.12 PHPRedisAdmin
+复制
+```
+```
+改动
+```
+```
+
+## 3.13 AdminMongo
+复制
+```
+```
+改动
+```
 ```
 
 </details>

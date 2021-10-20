@@ -52,47 +52,37 @@ dnmp
 
 # 2.快速使用
 
-环境准备
-Git Docker Docker-compose
-
 <details>
-<summary>点击查看详细内容</summary>
+<summary>环境准备 Git Docker Docker-compose</summary>
 
-## Ubuntu 18.04
-1.更换源（不换可忽略）
+### Ubuntu 18.04
 ```
+更换源（不换可忽略）
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 apt-get update
-```
-2.安装Git
-```
+
+1.安装Git
 apt-get install git
-```
-3.安装依赖包
-```
-apt-get install curl software-properties-common -y
-```
-4.添加GPG密钥
-```
+
+2.1.安装依赖包
+apt-get install curl software-properties-common
+
+2.2.添加GPG密钥
 curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg | apt-key add -
-```
-5.添加软件源
-```
+
+2.3.添加软件源
 add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
-```
-6.安装docker和docker-compose
-```
-apt-get install docker-ce -y
-apt-get install docker-compose -y
-```
-7.添加服务和启动docker
-```
+
+2.4.安装docker和docker-compose
+apt-get install docker-ce
+apt-get install docker-compose
+
+2.5.添加服务和启动docker
 systemctl enable docker
 systemctl start docker
-```
-8.添加组和加入组
-```
+
+2.6.添加组和加入组
 groupadd docker
 usermod -aG docker $USER
 ```
@@ -115,11 +105,10 @@ docker-compose up -d                                        # 构建、创建、
 ```
 
 <details>
-<summary>点击查看详细内容</summary>
+<summary>常用命令</summary>
 
-查看容器
 ```
-# docker-compose ps
+# docker-compose ps     # 查看容器
         Name                      Command               State                                 Ports
 ---------------------------------------------------------------------------------------------------------------------------------
 dnmp_elasticsearch_1   /usr/local/bin/docker-entr ...   Up      0.0.0.0:32780->9200/tcp, 0.0.0.0:32779->9300/tcp
@@ -133,10 +122,8 @@ dnmp_nginx_1           nginx -g daemon off;             Up      0.0.0.0:443->443
 dnmp_rabbitmq_1        docker-entrypoint.sh rabbi ...   Up      0.0.0.0:32775->15672/tcp, 25672/tcp, 4369/tcp, 5671/tcp, 5672/tcp
 dnmp_redis_1           docker-entrypoint.sh redis ...   Up      0.0.0.0:32768->6379/tcp
 dnmp_web_1             docker-php-entrypoint php-fpm    Up      9000/tcp
-```
-查看镜像
-```
-# docker image ls
+
+# docker images         # 查看镜像
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 lauchunwa/php       7.2-with-swoole     c6ac0aae0786        2 minutes ago       105MB
 rabbitmq            3.8                 392a144b8991        2 days ago          150MB
@@ -150,6 +137,48 @@ memcached           1.5-alpine          e0ec4da6251b        11 days ago         
 nginx               1.16-alpine         aaad4724567b        11 days ago         21.2MB
 mysql               5.7                 cd3ed0dfff7e        2 weeks ago         437MB
 openresty/openresty 1.15.8.1-alpine     470dd2afc586        2 months ago        57.9MB
+
+docker search IMAGE         # 查询镜像
+docker pull IMAGE           # 拉取镜像
+docker tag SOURCE TARGET    # 镜像打标签
+docker push IMAGE           # 提交镜像
+docker image ls             # 查看本地的镜像，加上-a参数可显示所以的镜像，简版docker images
+docker image rm IMAGE       # 删除镜像，多个用空格隔开，简版docker rmi IMAGE
+docker inspect IMAGE        # 查看镜像信息，多个用空格隔开，--format可按需显示字段及排版
+
+docker run -d IMAGE                     # 基于镜像创建容器并后台运行容器，运行成功则输出容器ID
+docker logs CONTAINER                   # 查看容器的日志，遇到错误时方便找原因，多个用空格隔开
+docker container ls                     # 查看运行的容器，加上-a参数也显示未运行的容器，简版docker ps
+docker container rm CONTAINER           # 删除未运行容器，多个用空格隔开，rm -f表示强制删除(运行中的)，简版docker rm CONTAINER
+docker exec -it CONTAINER bash          # 在运行中的容器中执行命令，-it粗浅表示交互式伪终端，不加的话命令执行了就退出
+docker start|stop|restart CONTAINER     # 启动|停止|重启 容器，多个用空格隔开
+docker run -it --rm IMAGE bash          # 基于镜像临时启动一个容器，可测试安装软件，或者满足一些好奇，比如rm -rf /，--rm表示退出就销毁容器
+
+docker run -d 
+-p HOST_PORT:CONTAINER_PORT 
+-v HOST_PATH:CONTAINER_PATH 
+-w WORD_DIR 
+-e VARIABLE_NAME=VALUE 
+--link TARGET_CONTAINER_NAME:ALIAS 
+--name NEW_CONTAINER_NAME 
+IMAGE 
+COMMAND ARG...                          # docker run 完整命令
+
+docker-compose up -d                    # 包含构建(拉取)镜像、创建容器、启动容器，可单独运行某个或多个，在后边列出服务名称即可
+docker-compose logs SERVICE             # 查看服务容器的日志，遇到错误时方便找原因，多个用空格隔开
+docker-compose ps                       # 查看编排文件下的所有服务容器，可单独显示某个或多个，在后边列出服务名称即可
+docker-compose exec SERVICE bash        # 在运行中的服务容器中执行命令，exec -d表示后台运行，不加参数默认exec -it
+docker-compose start|stop|restart       # 启动|停止|重启 编排文件下的所有服务服务容器，可单独执行某个或多个，在后边列出服务名称即可
+docker-compose down                     # 停止并移除编排文件下的所有服务容器，包括networks
+
+docker network ls           # 查看网络列表
+
+# 通用好习惯
+docker --help
+docker image --help
+docker container --help
+docker network --help
+docker-compose --help
 ```
 </details>
 
@@ -342,9 +371,15 @@ docker rm $(docker stop tmp-mongodb)
 ## 3.7 RabbitMQ
 复制
 ```
+docker run -d --name tmp-rabbitmq rabbitmq:3.8
+docker cp tmp-rabbitmq:/etc/rabbitmq/rabbitmq.conf ./rabbitmq/conf/rabbitmq.conf
+docker rm $(docker stop tmp-rabbitmq)
 ```
 改动
 ```
+# cat rabbitmq/conf/rabbitmq.conf
+loopback_users.guest = false
+listeners.tcp.default = 5672
 ```
 
 ## 3.8 Elasticsearch
@@ -357,22 +392,48 @@ docker rm $(docker stop tmp-elasticsearch)
 ```
 改动
 ```
+# cat config/elasticsearch.yml
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+
+# egrep -n '\-Xm' config/jvm.options
+22:-Xms256m
+23:-Xmx256m
 ```
 
 ## 3.9 Logstash
 复制
 ```
+docker run -d --name tmp-logstash logstash:7.4.2
+docker cp tmp-logstash:/usr/share/logstash/config/logstash.yml ./logstash/conf/logstash.yml
+docker cp tmp-logstash:/usr/share/logstash/config/jvm.options ./logstash/conf/jvm.options
+docker rm $(docker stop tmp-logstash)
 ```
 改动
 ```
+# cat config/logstash.yml
+http.host: "0.0.0.0"
+xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+
+# egrep -n '\-Xm' config/jvm.options
+6:-Xms256m
+7:-Xmx256m
 ```
 
 ## 3.10 Kibana
 复制
 ```
+docker run -d --name tmp-kibana kibana:7.4.2
+docker cp tmp-kibana:/usr/share/kibana/config/kibana.yml ./kibana/conf/kibana.yml
+docker rm $(docker stop tmp-kibana)
 ```
 改动
 ```
+# egrep -nv '^$|#' config/kibana.yml
+6:server.name: kibana
+7:server.host: "0"
+8:elasticsearch.hosts: [ "http://elasticsearch:9200" ]
+9:xpack.monitoring.ui.container.elasticsearch.enabled: true
 ```
 
 </details>

@@ -6,12 +6,12 @@ services:
             args:
                 PHP_VERSION: ${PHP_VERSION}
                 PHP_REDIS_VERSION: ${PHP_REDIS_VERSION}
-#                PHP_MEMCACHED_VERSION: ${PHP_MEMCACHED_VERSION}
-#                PHP_MONGODB_VERSION: ${PHP_MONGODB_VERSION}
-#                APCU_VERSION: ${APCU_VERSION}
-#                XDEBUG_VERSION: ${XDEBUG_VERSION}
-#                YAF_VERSION: ${YAF_VERSION}
-#                YACONF_VERSION: ${YACONF_VERSION}
+#                 PHP_MEMCACHED_VERSION: ${PHP_MEMCACHED_VERSION}
+#                 PHP_MONGODB_VERSION: ${PHP_MONGODB_VERSION}
+#                 APCU_VERSION: ${APCU_VERSION}
+#                 XDEBUG_VERSION: ${XDEBUG_VERSION}
+#                 YAF_VERSION: ${YAF_VERSION}
+#                 YACONF_VERSION: ${YACONF_VERSION}
                 SWOOLE_VERSION: ${SWOOLE_VERSION}
         image: ${PHP_IMAGE_NAME}:${PHP_VERSION}-with-swoole
         expose:
@@ -40,20 +40,20 @@ services:
         restart: always
         networks:
           - default
-#    openresty:
-#        image: openresty/openresty:${OPENRESTY_VERSION}-alpine
-#        ports:
-#          - ${HTTP_PORT}:${HTTP_PORT}
-#          - ${HTTPS_PORT}:${HTTPS_PORT}
-#        volumes:
-#          - ./nginx/conf/conf.d/:/etc/nginx/conf.d/
-#          - ./nginx/conf/nginx.conf:/etc/openresty/nginx/nginx.conf
-#          - ./nginx/html/:/usr/local/openresty/nginx/html/
-#          - ./nginx/logs/:/usr/local/openresty/nginx/logs/
-#        working_dir: /usr/local/openresty/nginx/html/
-#        restart: always
-#        networks:
-#          - default
+#     openresty:
+#         image: openresty/openresty:${OPENRESTY_VERSION}-alpine
+#         ports:
+#           - ${HTTP_PORT}:${HTTP_PORT}
+#           - ${HTTPS_PORT}:${HTTPS_PORT}
+#         volumes:
+#           - ./nginx/conf/conf.d/:/etc/nginx/conf.d/
+#           - ./nginx/conf/nginx.conf:/etc/openresty/nginx/nginx.conf
+#           - ./nginx/html/:/usr/local/openresty/nginx/html/
+#           - ./nginx/logs/:/usr/local/openresty/nginx/logs/
+#         working_dir: /usr/local/openresty/nginx/html/
+#         restart: always
+#         networks:
+#           - default
     mysql:
         image: mysql:${MYSQL_VERSION}
         ports:
@@ -67,19 +67,19 @@ services:
         restart: always
         networks:
           - default
-#    mysql-slave:
-#        image: mysql:${MYSQL_VERSION}
-#        ports:
-#          - ${MYSQL_PORT}
-#        volumes:
-#          - ./mysql/conf/my-slave.cnf:/etc/mysql/my.cnf
-#          - ./mysql/slave/data/:/var/lib/mysql/
-#          - ./mysql/slave/logs/:/var/log/mysql/
-#        environment:
-#            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#        restart: always
-#        networks:
-#          - default
+#     mysql-slave:
+#         image: mysql:${MYSQL_VERSION}
+#         ports:
+#           - ${MYSQL_PORT}
+#         volumes:
+#           - ./mysql/conf/my-slave.cnf:/etc/mysql/my.cnf
+#           - ./mysql/slave/data/:/var/lib/mysql/
+#           - ./mysql/slave/logs/:/var/log/mysql/
+#         environment:
+#             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#         restart: always
+#         networks:
+#           - default
     redis:
         image: redis:${REDIS_VERSION}-alpine
         ports:
@@ -92,73 +92,80 @@ services:
         restart: always
         networks:
           - default
-#    mongodb:
-#        image: mongo:${MONGODB_VERSION}
-#        ports:
-#          - ${MONGODB_PORT}
-#        volumes:
-#          - ./mongodb/conf/mongod.conf:/etc/mongod.conf.orig
-#          - ./mongodb/data/:/var/lib/mongodb/
-#          - ./mongodb/logs/:/var/log/mongodb/
-#        command: mongod --config /etc/mongod.conf.orig
-#        restart: always
-#        networks:
-#          - default
-#    memcached:
-#        image: memcached:${MEMCACHED_VERSION}-alpine
-#        ports:
-#          - ${MEMCACHED_PORT}
-#        volumes:
-#          - ./memcached/logs/:/var/log/memcached/
-#        command: memcached -vv >> /var/log/memcached/memcached.log 2>&1
-#        restart: always
-#        networks:
-#          - default
-#    rabbitmq:
-#        image: rabbitmq:${RABBITMQ_VERSION}
-#        ports:
-#          - ${RABBITMQ_WEB_PORT}
-#        volumes:
-#          - ./rabbitmq/conf/:/etc/rabbitmq/
-#          - ./rabbitmq/data/:/var/lib/rabbitmq/
-#          - ./rabbitmq/logs/:/var/log/rabbitmq/
-#        # environment:
-#        #     RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-#        #     RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-#        # command: rabbitmq-plugins enable rabbitmq_management
-#        restart: always
-#        networks:
-#          - default
-#    elasticsearch:
-#        image: elasticsearch:${ELASTICSEARCH_VERSION}
-#        ports:
-#          - ${ELASTICSEARCH_API_PORT}
-#          - ${ELASTICSEARCH_UI_PORT}
-#        volumes:
-#          - ./elasticsearch/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-#          - ./elasticsearch/conf/jvm.options:/usr/share/elasticsearch/config/jvm.options
-#          - ./elasticsearch/data/:/usr/share/elasticsearch/data/
-#          - ./elasticsearch/logs/:/usr/share/elasticsearch/logs/
-#        environment:
-#            discovery.type: single-node
-#            ES_JAVA_OPTS: -Xms512m -Xmx512m
-#        restart: always
-#        networks:
-#          - default
-#    logstash:
-#        image: logstash:${LOGSTASH_VERSION}
-#        ports:
-#          - ${LOGSTASH_PORT}
-#          - ${LOGSTASH_UI_PORT}
-#        restart: always
-#        depends_on:
-#          - elasticsearch
-#    kibana:
-#        image: kibana:${KIBANA_VERSION}
-#        ports:
-#          - ${KIBANA_PORT}
-#        restart: always
-#        depends_on:
-#          - elasticsearch
+#     mongodb:
+#         image: mongo:${MONGODB_VERSION}
+#         ports:
+#           - ${MONGODB_PORT}
+#         volumes:
+#           - ./mongodb/conf/mongod.conf:/etc/mongod.conf.orig
+#           - ./mongodb/data/:/var/lib/mongodb/
+#           - ./mongodb/logs/:/var/log/mongodb/
+#         command: mongod --config /etc/mongod.conf.orig
+#         restart: always
+#         networks:
+#           - default
+#     memcached:
+#         image: memcached:${MEMCACHED_VERSION}-alpine
+#         ports:
+#           - ${MEMCACHED_PORT}
+#         volumes:
+#           - ./memcached/logs/:/var/log/memcached/
+#         command: memcached -vv >> /var/log/memcached/memcached.log 2>&1
+#         restart: always
+#         networks:
+#           - default
+#     rabbitmq:
+#         image: rabbitmq:${RABBITMQ_VERSION}
+#         ports:
+#           - ${RABBITMQ_WEB_PORT}
+#         volumes:
+#           - ./rabbitmq/conf/:/etc/rabbitmq/
+#           - ./rabbitmq/data/:/var/lib/rabbitmq/
+#           - ./rabbitmq/logs/:/var/log/rabbitmq/
+#         # environment:
+#         #     RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+#         #     RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+#         # command: rabbitmq-plugins enable rabbitmq_management
+#         restart: always
+#         networks:
+#           - default
+#     elasticsearch:
+#         image: elasticsearch:${ELASTICSEARCH_VERSION}
+#         ports:
+#           - ${ELASTICSEARCH_API_PORT}
+#           - ${ELASTICSEARCH_UI_PORT}
+#         volumes:
+#           - ./elasticsearch/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+#           - ./elasticsearch/conf/jvm.options:/usr/share/elasticsearch/config/jvm.options
+#           - ./elasticsearch/data/:/usr/share/elasticsearch/data/
+#           - ./elasticsearch/logs/:/usr/share/elasticsearch/logs/
+#         environment:
+#             discovery.type: single-node
+#             ES_JAVA_OPTS: -Xms256m -Xmx256m
+#         restart: always
+#         networks:
+#           - default
+#     logstash:
+#         image: logstash:${LOGSTASH_VERSION}
+#         ports:
+#           - ${LOGSTASH_PORT}
+#           - ${LOGSTASH_UI_PORT}
+#         # volumes:
+#         #   - ./logstash/conf/logstash.yml:/etc/logstash/logstash.yml
+#         #   - ./logstash/conf/jvm.options:/etc/logstash/jvm.options
+#         restart: always
+#         depends_on:
+#           - elasticsearch
+#     kibana:
+#         image: kibana:${KIBANA_VERSION}
+#         ports:
+#           - ${KIBANA_PORT}
+#         # volumes:
+#         #   - ./kibana/conf/kibana.yml:/etc/kibana/kibana.yml
+#         # environment:
+#         #     NODE_OPTIONS="$NODE_OPTIONS --max-old-space-size=256"
+#         restart: always
+#         depends_on:
+#           - elasticsearch
 networks:
     default:

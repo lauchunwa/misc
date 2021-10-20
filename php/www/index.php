@@ -120,7 +120,7 @@ class ws
         $this->ws = new Swoole\WebSocket\Server(self::SERVER_HOST, self::SERVER_POST);
 
         $this->ws->set([
-            'worker_num' => 16,
+            'worker_num' => 8,
             'daemonize' => false,
             'max_request' => 10000,
         ]);

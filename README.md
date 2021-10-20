@@ -65,8 +65,8 @@ dnmp_web_1     docker-php-entrypoint php-fpm    Up      9000/tcp
 ```
 # docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-lauchunwa/php       7.1-with-swoole     7c40ca63511b        2 minutes ago       96.7MB
-php                 7.1-fpm-alpine      2ab4b3a4ab34        8 days ago          67.8MB
+lauchunwa/php       7.2-with-swoole     c6ac0aae0786        2 minutes ago       105MB
+php                 7.2-fpm-alpine      bd2347230416        8 days ago          76.4MB
 redis               5.0-alpine          6f63d037b592        11 days ago         29.3MB
 nginx               1.16-alpine         aaad4724567b        11 days ago         21.2MB
 mysql               5.7                 cd3ed0dfff7e        2 weeks ago         437MB

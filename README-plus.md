@@ -2,10 +2,10 @@
 使用`docker-compose`快速部署`lnmp(Linux, Nginx, MySQL, PHP7+Swoole)`
 
 基本服务 `PHP7, Nginx, MySQL, Redis`  
-其他服务 `Mysql-slave, MongoDB, Memcached, RabbitMQ, ElasticStack(Elasticsearch+Logstash+Kibana)`
+其他服务 `OpenResty, Mysql-slave, MongoDB, Memcached, RabbitMQ, ElasticStack(Elasticsearch+Logstash+Kibana)`
 
 PHP常用扩展 `pdo_mysql, redis, swoole`  
-其他扩展 `mongodb, memcached, apcu, yaf, xdebug`
+其他扩展 `mongodb, memcached, apcu, yaf, yaconf, xdebug`
 
 # 1.目录结构
 
@@ -79,35 +79,36 @@ docker-compose up -d                                        # 构建、创建、
 查看容器
 ```
 # docker-compose ps
-        Name                      Command               State                                        Ports                                      
-------------------------------------------------------------------------------------------------------------------------------------------------
-dnmp_elasticsearch_1   /usr/local/bin/docker-entr ...   Up      0.0.0.0:32781->9200/tcp, 0.0.0.0:32780->9300/tcp                                
-dnmp_kibana_1          /usr/local/bin/dumb-init - ...   Up      0.0.0.0:32777->5601/tcp                                                         
-dnmp_logstash_1        /usr/local/bin/docker-entr ...   Up      0.0.0.0:32779->5044/tcp, 0.0.0.0:32778->9600/tcp                                
-dnmp_memcached_1       docker-entrypoint.sh memca ...   Up      0.0.0.0:32772->11211/tcp                                                        
-dnmp_mongodb_1         docker-entrypoint.sh mongo ...   Up      0.0.0.0:32770->27017/tcp                                                        
-dnmp_mysql-slave_1     docker-entrypoint.sh mysqld      Up      0.0.0.0:32771->3306/tcp, 33060/tcp                                              
-dnmp_mysql_1           docker-entrypoint.sh mysqld      Up      0.0.0.0:32769->3306/tcp, 33060/tcp                                              
-dnmp_nginx_1           nginx -g daemon off;             Up      0.0.0.0:443->443/tcp, 0.0.0.0:80->80/tcp                                        
-dnmp_rabbitmq_1        docker-entrypoint.sh rabbi ...   Up      0.0.0.0:32775->15672/tcp, 25672/tcp, 4369/tcp, 5671/tcp, 0.0.0.0:32776->5672/tcp
-dnmp_redis_1           docker-entrypoint.sh redis ...   Up      0.0.0.0:32768->6379/tcp                                                         
-dnmp_web_1             docker-php-entrypoint php-fpm    Up      9000/tcp                                                                        
+        Name                      Command               State                                 Ports
+---------------------------------------------------------------------------------------------------------------------------------
+dnmp_elasticsearch_1   /usr/local/bin/docker-entr ...   Up      0.0.0.0:32780->9200/tcp, 0.0.0.0:32779->9300/tcp
+dnmp_kibana_1          /usr/local/bin/dumb-init - ...   Up      0.0.0.0:32777->5601/tcp
+dnmp_logstash_1        /usr/local/bin/docker-entr ...   Up      0.0.0.0:32776->5044/tcp, 0.0.0.0:32778->9600/tcp
+dnmp_memcached_1       docker-entrypoint.sh memca ...   Up      0.0.0.0:32772->11211/tcp
+dnmp_mongodb_1         docker-entrypoint.sh mongo ...   Up      0.0.0.0:32770->27017/tcp
+dnmp_mysql-slave_1     docker-entrypoint.sh mysqld      Up      0.0.0.0:32771->3306/tcp, 33060/tcp
+dnmp_mysql_1           docker-entrypoint.sh mysqld      Up      0.0.0.0:32769->3306/tcp, 33060/tcp
+dnmp_nginx_1           nginx -g daemon off;             Up      0.0.0.0:443->443/tcp, 0.0.0.0:80->80/tcp
+dnmp_rabbitmq_1        docker-entrypoint.sh rabbi ...   Up      0.0.0.0:32775->15672/tcp, 25672/tcp, 4369/tcp, 5671/tcp, 5672/tcp
+dnmp_redis_1           docker-entrypoint.sh redis ...   Up      0.0.0.0:32768->6379/tcp
+dnmp_web_1             docker-php-entrypoint php-fpm    Up      9000/tcp
 ```
 查看镜像
 ```
 # docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-lauchunwa/php       7.1-with-swoole     7c40ca63511b        2 minutes ago       96.7MB
+lauchunwa/php       7.2-with-swoole     c6ac0aae0786        2 minutes ago       105MB
 rabbitmq            3.8                 392a144b8991        2 days ago          150MB
 mongo               4.2                 965553e202a4        2 days ago          363MB
 logstash            7.4.2               642b82780655        6 days ago          889MB
 kibana              7.4.2               230d3ded1abc        6 days ago          1.1GB
 elasticsearch       7.4.2               b1179d41a7b4        6 days ago          855MB
-php                 7.1-fpm-alpine      2ab4b3a4ab34        8 days ago          67.8MB
+php                 7.2-fpm-alpine      bd2347230416        8 days ago          76.4MB
 redis               5.0-alpine          6f63d037b592        11 days ago         29.3MB
 memcached           1.5-alpine          e0ec4da6251b        11 days ago         9.08MB
 nginx               1.16-alpine         aaad4724567b        11 days ago         21.2MB
 mysql               5.7                 cd3ed0dfff7e        2 weeks ago         437MB
+openresty/openresty 1.15.8.1-alpine     470dd2afc586        2 months ago        57.9MB
 ```
 </details>
 
@@ -129,15 +130,18 @@ mysql               5.7                 cd3ed0dfff7e        2 weeks ago         
 ## 3.1 PHP
 复制
 ```
-docker run -d --name tmp-php php:7.1-fpm-alpine
-docker cp tmp-php:/usr/local/etc/php-fpm.d/ ./php/conf/php-fpm.d/
+docker run -d --name tmp-php php:7.2-fpm-alpine
+docker cp tmp-php:/usr/local/etc/php-fpm.d/ ./php/conf/
 docker cp tmp-php:/usr/local/etc/php/php.ini-development ./php/conf/php.ini
 docker rm $(docker stop tmp-php)
 ```
 改动
 ```
 # egrep -n '^(|;)error_log.*\.log' php/conf/php.ini
-583:error_log = /var/log/php/php_errors.log     ;error_log = php_errors.log
+583:error_log = /var/log/php/php_errors.log
+
+# egrep -in 'track_errors ?= ?' php/conf/php.ini
+532:track_errors = Off
 
 # grep -n 'apc' php/conf/php.ini
 1957:[apc]
@@ -268,8 +272,8 @@ rm -rf ./redis-5.0.0 redis-5.0.0.tar.gz
 改动
 ```
 # egrep -n '^(|;)bind|^(|;)logfile' redis/conf/redis.conf
-69:bind 0.0.0.0                                 # bind 127.0.0.1
-171:logfile "/var/log/redis/redis.log"          # logfile ""
+69:bind 0.0.0.0
+171:logfile "/var/log/redis/redis.log"
 ```
 
 ## 3.5 MongoDB

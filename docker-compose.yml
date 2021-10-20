@@ -11,6 +11,7 @@ services:
 #                APCU_VERSION: ${APCU_VERSION}
 #                XDEBUG_VERSION: ${XDEBUG_VERSION}
 #                YAF_VERSION: ${YAF_VERSION}
+#                YACONF_VERSION: ${YACONF_VERSION}
                 SWOOLE_VERSION: ${SWOOLE_VERSION}
         image: ${PHP_IMAGE_NAME}:${PHP_VERSION}-with-swoole
         expose:
@@ -18,9 +19,10 @@ services:
         volumes:
           - ./php/conf/php-fpm.d/:/usr/local/etc/php-fpm.d/
           - ./php/conf/php.ini:/usr/local/etc/php/php.ini
-          - ./php/www/:/www/
+          - ./php/www/:${SCRIPT_DIR}
           - ./php/logs/:/var/log/php/
-        working_dir: /www/
+          # - /usr/local/bin/composer:/usr/local/bin/composer
+        working_dir: ${SCRIPT_DIR}
         restart: always
         networks:
           - default
@@ -38,6 +40,20 @@ services:
         restart: always
         networks:
           - default
+#    openresty:
+#        image: openresty/openresty:${OPENRESTY_VERSION}-alpine
+#        ports:
+#          - ${HTTP_PORT}:${HTTP_PORT}
+#          - ${HTTPS_PORT}:${HTTPS_PORT}
+#        volumes:
+#          - ./nginx/conf/conf.d/:/etc/nginx/conf.d/
+#          - ./nginx/conf/nginx.conf:/etc/openresty/nginx/nginx.conf
+#          - ./nginx/html/:/usr/local/openresty/nginx/html/
+#          - ./nginx/logs/:/usr/local/openresty/nginx/logs/
+#        working_dir: /usr/local/openresty/nginx/html/
+#        restart: always
+#        networks:
+#          - default
     mysql:
         image: mysql:${MYSQL_VERSION}
         ports:
@@ -106,9 +122,9 @@ services:
 #          - ./rabbitmq/conf/:/etc/rabbitmq/
 #          - ./rabbitmq/data/:/var/lib/rabbitmq/
 #          - ./rabbitmq/logs/:/var/log/rabbitmq/
-#        environment:
-#            RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-#            RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+#        # environment:
+#        #     RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+#        #     RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
 #        # command: rabbitmq-plugins enable rabbitmq_management
 #        restart: always
 #        networks:
@@ -146,4 +162,3 @@ services:
 #          - elasticsearch
 networks:
     default:
-

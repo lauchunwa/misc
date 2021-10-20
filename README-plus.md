@@ -263,7 +263,10 @@ docker rm $(docker stop tmp-mysql)
 改动
 ```
 # sed ':a;N;$!ba;s/.*conf\.d\/\n//g' mysql/conf/my.cnf
+[client]
+default-character-set=utf8
 [mysqld]
+default-time_zone = '+8:00'
 explicit_defaults_for_timestamp = true
 # 错误日志
 log_error = /var/log/mysql/error.log
@@ -285,11 +288,26 @@ relay_log = relay_log
 gtid_mode = on
 enforce_gtid_consistency = on
 ```
-主从复制相关配置
 <details>
-<summary>点击查看详细内容</summary>
+<summary>主从复制</summary>
 
 ```
+# 主库数据迁移 # 无业务数据可忽略
+flush tables with read lock;
+mysqldump -uroot -p --databases test > /tmp/backup.sql;
+unlock tables;
+# 在主库上创建一个用于复制的用户，注意：允许访问的ip填从库的或者通配
+grant replication slave on *.* to repl@'mysql-slave' identified by '123456';
+flush privileges;
+# 在从库上进行主从关联的SQL语句
+change master to master_host='mysql', master_user='repl', master_password='123456', master_log_file='bin_log_${ip}.000003', master_log_pos=154;
+# 重启slave服务
+show slave status\G; # 重启前状态
+stop slave;
+start slave;
+show slave status\G; # 重启后状态
+# 在主库做修改，在从库查看是否同步
+
 # master: 172.19.0.2  slave: 172.19.0.3
 # master配置
 server_id = 2                       # 全局唯一，主从、从从都不能一样，通常设置为IP尾段
@@ -318,22 +336,225 @@ max_binlog_size = 100M              # 日志文件的大小，默认最大1G
 max_binlog_files = 20               # 日志文件的最大数量
 expire_logs_days = 7                # 二进制日志过期清理时间。默认值为0，表示不自动删除。
 slave_skip_errors = 1062            # 跳过主从复制中遇到的所有错误或指定类型的错误，避免slave端复制中断。# 如：1062错误是指一些主键重复，1032错误是因为主从数据库数据不一致
+```
+</details>
 
-# 主库数据迁移 # 无业务数据可忽略
-flush tables with read lock;
-mysqldump -uroot -p --databases test > /tmp/backup.sql;
-unlock tables;
-# 在主库上创建一个用于复制的用户，注意：允许访问的ip填从库的或者通配
-grant replication slave on *.* to repl@'mysql-slave' identified by '123456';
-flush privileges;
-# 在从库上进行主从关联的SQL语句
-change master to master_host='mysql', master_user='repl', master_password='123456', master_log_file='bin_log_${ip}.000003', master_log_pos=154;
-# 重启slave服务
-show slave status\G; # 重启前状态
-stop slave;
-start slave;
-show slave status\G; # 重启后状态
-# 在主库做修改，在从库查看是否同步
+<details>
+<summary>表分区</summary>
+
+```
+-- 用户表
+-- DROP TABLE IF EXISTS `blog`.`users`;
+CREATE TABLE `blog`.`users` ( 
+    `id` INT NOT NULL AUTO_INCREMENT COMMENT 'ID' , 
+    `nickname` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '昵称' , 
+    `username` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '用户名' , 
+    `password` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '密码' , 
+    `remember_token` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '记住Token' , 
+    `sex` TINYINT NOT NULL DEFAULT 0 COMMENT '性别' , 
+    `birthday` TIMESTAMP NOT NULL DEFAULT 0 COMMENT '性别' , 
+    `email` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '邮箱' , 
+    `email_verified_at` TIMESTAMP COMMENT '邮箱验证时间' , 
+    `phone` VARCHAR(11) NOT NULL DEFAULT '' COMMENT '电话' , 
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间' , 
+    `updated_at` TIMESTAMP on update CURRENT_TIMESTAMP COMMENT '修改时间' , 
+    PRIMARY KEY (`id`, `created_at`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '用户表' 
+PARTITION BY RANGE (UNIX_TIMESTAMP(`created_at`)) (
+    PARTITION p20190801 VALUES LESS THAN (UNIX_TIMESTAMP('2019-08-01 00:00:00')), 
+    PARTITION p20190901 VALUES LESS THAN (UNIX_TIMESTAMP('2019-09-01 00:00:00')), 
+    PARTITION p20191001 VALUES LESS THAN (UNIX_TIMESTAMP('2019-10-01 00:00:00')), 
+    PARTITION pMax VALUES LESS THAN MAXVALUE
+);
+
+-- 存储过程 添加分区
+DROP PROCEDURE IF EXISTS `blog`.`sp_continue_partition`;
+DELIMITER $$
+CREATE 
+    -- DEFINER = 'spadmin'@'%' 
+    PROCEDURE `blog`.`sp_continue_partition` (IN tb VARCHAR(64), IN granularity VARCHAR(10), IN p_quantity INT) 
+BEGIN 
+    -- 基准时间, 默认当前时间
+    DECLARE datumTime TIMESTAMP DEFAULT NOW();
+    -- 分区个数, 默认3个, 即：之前的, 前月, 上月, 当月, MAX之后的
+    DECLARE pQuantity INT DEFAULT p_quantity;
+    -- 提前多久添加新分区, 默认半个粒度, 比如按自然月分区, 半个粒度就是半个月
+    DECLARE advanceTime DECIMAL(10, 2) DEFAULT 0.5;
+    SET advanceTime = (UNIX_TIMESTAMP(DATE_ADD(datumTime, interval advanceTime * 10 month)) - UNIX_TIMESTAMP(datumTime)) / 10;
+    -- 查询分区中的最大分区号, 最大分区值
+    SELECT REPLACE(partition_name, 'p', ''), partition_description 
+        INTO @pLastName, @pLastValue 
+        FROM information_schema.partitions 
+        WHERE table_schema = DATABASE() AND table_name = tb AND partition_name != 'pMax' 
+        ORDER BY REPLACE(partition_name, 'p', '') * 1 DESC 
+        LIMIT 1;
+
+    -- 遍历示例
+    -- DECLARE pName, pValue VARCHAR(20);
+    -- DECLARE flag INT DEFAULT 0;
+    -- DECLARE pCurosr CURSOR FOR 
+    --     SELECT REPLACE(partition_name, 'p', ''), partition_description 
+    --         FROM information_schema.partitions 
+    --         WHERE table_schema = DATABASE() AND table_name = 'users' AND partition_name != 'pMax' 
+    --         ORDER BY REPLACE(partition_name, 'p', '') * 1 DESC;
+    -- DECLARE CONTINUE HANDLER FOR NOT FOUND SET flag = 1;
+    -- OPEN pCurosr;
+    -- REPEAT 
+    --     FETCH pCurosr INTO pName, pValue;
+    --         SELECT pName, pValue;
+    --     UNTIL flag 
+    -- END REPEAT;
+    -- CLOSE pCurosr;
+
+    -- 基准值 大于或等于 分区中的最大值, 则添加新的分区
+    -- 例如: 当前最大分区号是20191001, 那么到了2019-09-16左右就会重新定义分区, 分区后最大分区号是20191101
+    IF UNIX_TIMESTAMP(datumTime) >= (@pLastValue - advanceTime) THEN
+        -- 组装分区SQL
+        SET @definePartitionSql = CONCAT('ALTER TABLE `', tb, '` PARTITION BY RANGE (UNIX_TIMESTAMP(`created_at`)) (');
+
+        WHILE (pQuantity >= 0) DO
+            -- 分区最大月份的下一个月份
+            SET @getPNextMonthSql = CONCAT("SELECT DATE_ADD(DATE_FORMAT('", datumTime, "', '%Y-%m-01 00:00:00'), interval -(", pQuantity, " - 2) ", granularity, ") INTO @pNextValue");
+            PREPARE stmt FROM @getPNextMonthSql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+            -- 分区最大分区号的下一个号码
+            SET @pNextNum = DATE_FORMAT(@pNextValue, '%Y%m%d');
+            -- 组装分区SQL
+            SET @definePartitionSql = CONCAT(@definePartitionSql, 'PARTITION p', @pNextNum, ' VALUES LESS THAN (', UNIX_TIMESTAMP(@pNextValue), '), ');
+            -- 计数
+            set pQuantity = pQuantity - 1;
+        END WHILE;
+
+        -- 组装分区SQL
+        SET @definePartitionSql = CONCAT(@definePartitionSql, 'PARTITION pMax VALUES LESS THAN (MAXVALUE));');
+        -- 打印SQL, 调试用
+        -- SELECT @definePartitionSql;
+        -- 预处理SQL
+        PREPARE stmt FROM @definePartitionSql;
+        -- 执行SQL
+        EXECUTE stmt;
+        -- 释放预处理
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
+DELIMITER ;
+
+-- 存储过程 添加测试数据
+DROP PROCEDURE IF EXISTS `blog`.`sp_add_test_record`;
+DELIMITER $$
+CREATE 
+    -- DEFINER = 'spadmin'@'%' 
+    PROCEDURE `blog`.`sp_add_test_record`(IN tb VARCHAR(64), IN n INT) 
+BEGIN 
+    -- 起始时间, 默认前三个月
+    DECLARE st TIMESTAMP DEFAULT DATE_ADD(NOW(), interval -3 month);
+    -- 结束时间, 默认当前时间
+    DECLARE et TIMESTAMP DEFAULT NOW();
+    -- 待插入的时间
+    DECLARE t TIMESTAMP;
+    -- 计数
+    DECLARE i INT DEFAULT 0;
+
+    -- 组装插入SQL
+    SET @insertSql = CONCAT('INSERT INTO ', tb, ' (`created_at`) VALUES ');
+
+    WHILE (i < n) DO
+        -- 前三月内随机一个时间
+        SET t = DATE_ADD(st, interval (unix_timestamp(et) - unix_timestamp(st)) * RAND() second);
+        -- 组装插入SQL
+        SET @insertSql = CONCAT(@insertSql, '("', t, '"),');
+        -- 计数
+        set i = i + 1;
+    END WHILE;
+
+    SET @insertSql = left(@insertSql, char_length(rtrim(@insertSql)) - 1);
+    -- 预处理SQL
+    PREPARE stmt FROM @insertSql;
+    -- 执行SQL
+    EXECUTE stmt;
+    -- 释放预处理
+    DEALLOCATE PREPARE stmt;
+END$$
+DELIMITER ;
+
+-- 定时任务
+DROP EVENT IF EXISTS `blog`.`job_continue_partition`;
+DELIMITER $$
+CREATE 
+    -- DEFINER = 'jobadmin'@'%'
+    EVENT `blog`.`job_continue_partition` 
+    ON SCHEDULE EVERY 30 SECOND 
+    STARTS TIMESTAMP '2019-10-01 08:00:00' 
+    ON COMPLETION PRESERVE 
+    DO 
+BEGIN 
+    -- 添加测试数据
+    call sp_add_test_record('users', 1);
+    -- 添加分区 使分区持续可用
+    call sp_continue_partition('users', 'month', 3);
+END$$
+DELIMITER ;
+
+-- 有MAXVALUE分区时, 不能添加新的分区, 只能重新定义同类型的分区, 
+-- 数据会重新分区, 不会丢失, 也就是加大或缩小分区粒度, 或者粒度不变增加分区
+-- alter table `users` add partition (partition p20191001 values less than (UNIX_TIMESTAMP('2019-10-01 00:00:00')));
+-- ERROR 1481 (HY000): MAXVALUE can only be used in last partition definition
+-- 字段类型为TIMESTAMP时, 表达式用UNIX_TIMESTAMP(`field`)；字段类型为DATETIME时, 表达式用TO_DAYS(`field`)；不然会报错
+-- ERROR 1486 (HY000): Constant, random or timezone-dependent expressions in (sub)partitioning function are not allowed
+-- 分区values添加顺序错乱, 大的必须在小的后边
+-- ERROR 1493 (HY000): VALUES LESS THAN value must be strictly increasing for each partition
+-- 分区字段必须包含于主键（如果有的话）, 报此错误说明表有设置主键且不包含分区字段, 把分区字段设置为主键即可
+-- ERROR 1503 (HY000): A PRIMARY KEY must include all columns in the table's partitioning function
+
+-- 查询表数据
+-- select * from `users` order by id;
+-- 添加分区
+-- alter table `users` add partition (
+    -- partition p1 value less than (UNIX_TIMESTAMP('2019-10-01 00:00:00'))
+-- );
+-- 删除表分区
+-- alter table `users` drop partition p0, p1, p2;
+-- 查看分区信息
+-- select partition_name, table_rows, partition_expression, partition_description 
+    -- from information_schema.partitions 
+    -- where table_schema = 'blog' and table_name = 'users' 
+    -- order by replace(partition_name, 'p', '') * 1 desc;
+-- 分析语句查询情况
+-- explain partitions 
+    -- select * from `users` 
+    -- where `created_at` >= '20191001000000' and `created_at` <= '20200101000000';
+-- 查询指定分区的数据
+-- select * from `users` partition (p0, p1, p2);
+
+-- 查询存储过程
+-- select * from mysql.proc where db = 'blog' \G
+-- 修改difiner
+-- update mysql.proc set definer='spadmin@%';
+-- 查询存储过程的状态
+-- show procedure status where db = 'blog';
+-- 删除存储过程
+-- drop procedure `sp_continue_partition`;
+-- 调用存储过程
+-- call sp_continue_partition('users', 'month', 3);
+
+-- 查看定时任务
+-- select * from mysql.event where db = 'blog' \G
+-- 修改difiner
+-- update mysql.event set definer='jobadmin@%';
+-- 定时器配置开机启动
+-- [mysqld]
+-- event_scheduler = on;
+-- 查看定时器状态
+-- show variables like '%event_scheduler%';
+-- 启动定时器
+-- set global event_scheduler = on;
+-- 停止定时器
+-- set global event_scheduler = off;
+-- 开启事件
+-- alter event job_continue_partition on completion preserve enable;
+-- 关闭事件
+-- alter event job_continue_partition on completion preserve disable;
+-- 删除定时器
+-- drop event job_continue_partition;
 ```
 </details>
 

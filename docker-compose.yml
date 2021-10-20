@@ -1,4 +1,4 @@
-version: "3"
+version: "2"
 services:
     web:
         build:
@@ -140,30 +140,36 @@ services:
 #           - ./elasticsearch/data/:/usr/share/elasticsearch/data/
 #           - ./elasticsearch/logs/:/usr/share/elasticsearch/logs/
 #         environment:
-#             discovery.type: single-node
 #             ES_JAVA_OPTS: -Xms256m -Xmx256m
+#             discovery.type: single-node
+#         #     cluster.name: docker-cluster
+#         #     network.host: 0.0.0.0
+#         # command: plugin install mobz/elasticsearch-head
 #         restart: always
 #         networks:
 #           - default
 #     logstash:
 #         image: logstash:${LOGSTASH_VERSION}
 #         ports:
-#           - ${LOGSTASH_PORT}
-#           - ${LOGSTASH_UI_PORT}
+#           - ${LOGSTASH_WEB_PORT}
+#           - ${LOGSTASH_CLI_PORT}
 #         # volumes:
 #         #   - ./logstash/conf/logstash.yml:/etc/logstash/logstash.yml
 #         #   - ./logstash/conf/jvm.options:/etc/logstash/jvm.options
+#         # command: logstash-plugin update logstash-input-beats
 #         restart: always
 #         depends_on:
 #           - elasticsearch
 #     kibana:
 #         image: kibana:${KIBANA_VERSION}
 #         ports:
-#           - ${KIBANA_PORT}
+#           - ${KIBANA_WEB_PORT}
 #         # volumes:
 #         #   - ./kibana/conf/kibana.yml:/etc/kibana/kibana.yml
 #         # environment:
-#         #     NODE_OPTIONS="$NODE_OPTIONS --max-old-space-size=256"
+#         #     NODE_OPTIONS: --max-old-space-size=256
+#         #     server.host: 0.0.0.0
+#         #     elasticsearch.hosts: http://elasticsearch:9200
 #         restart: always
 #         depends_on:
 #           - elasticsearch

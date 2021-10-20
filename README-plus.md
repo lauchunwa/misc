@@ -138,47 +138,53 @@ nginx               1.16-alpine         aaad4724567b        11 days ago         
 mysql               5.7                 cd3ed0dfff7e        2 weeks ago         437MB
 openresty/openresty 1.15.8.1-alpine     470dd2afc586        2 months ago        57.9MB
 
-docker search IMAGE         # 查询镜像
-docker pull IMAGE           # 拉取镜像
-docker tag SOURCE TARGET    # 镜像打标签
-docker push IMAGE           # 提交镜像
-docker image ls             # 查看本地的镜像，加上-a参数可显示所以的镜像，简版docker images
-docker image rm IMAGE       # 删除镜像，多个用空格隔开，简版docker rmi IMAGE
-docker inspect IMAGE        # 查看镜像信息，多个用空格隔开，--format可按需显示字段及排版
-
-docker run -d IMAGE                     # 基于镜像创建容器并后台运行容器，运行成功则输出容器ID
-docker logs CONTAINER                   # 查看容器的日志，遇到错误时方便找原因，多个用空格隔开
-docker container ls                     # 查看运行的容器，加上-a参数也显示未运行的容器，简版docker ps
-docker container rm CONTAINER           # 删除未运行容器，多个用空格隔开，rm -f表示强制删除(运行中的)，简版docker rm CONTAINER
-docker exec -it CONTAINER bash          # 在运行中的容器中执行命令，-it粗浅表示交互式伪终端，不加的话命令执行了就退出
-docker start|stop|restart CONTAINER     # 启动|停止|重启 容器，多个用空格隔开
-docker run -it --rm IMAGE bash          # 基于镜像临时启动一个容器，可测试安装软件，或者满足一些好奇，比如rm -rf /，--rm表示退出就销毁容器
-
-docker run -d 
--p HOST_PORT:CONTAINER_PORT 
--v HOST_PATH:CONTAINER_PATH 
--w WORD_DIR 
--e VARIABLE_NAME=VALUE 
---link TARGET_CONTAINER_NAME:ALIAS 
---name NEW_CONTAINER_NAME 
-IMAGE 
-COMMAND ARG...                          # docker run 完整命令
-
-docker-compose up -d                    # 包含构建(拉取)镜像、创建容器、启动容器，可单独运行某个或多个，在后边列出服务名称即可
-docker-compose logs SERVICE             # 查看服务容器的日志，遇到错误时方便找原因，多个用空格隔开
-docker-compose ps                       # 查看编排文件下的所有服务容器，可单独显示某个或多个，在后边列出服务名称即可
-docker-compose exec SERVICE bash        # 在运行中的服务容器中执行命令，exec -d表示后台运行，不加参数默认exec -it
-docker-compose start|stop|restart       # 启动|停止|重启 编排文件下的所有服务服务容器，可单独执行某个或多个，在后边列出服务名称即可
-docker-compose down                     # 停止并移除编排文件下的所有服务容器，包括networks
-
-docker network ls           # 查看网络列表
-
 # 通用好习惯
 docker --help
 docker image --help
 docker container --help
 docker network --help
 docker-compose --help
+
+docker search IMAGE                     # 查询镜像
+docker pull IMAGE                       # 拉取镜像
+docker tag SOURCE TARGET                # 镜像添加标签
+docker push IMAGE                       # 提交镜像
+docker image ls                         # 查看本地的镜像，加上-a参数可显示所以的镜像，简版docker images
+docker image rm IMAGE                   # 删除镜像，多个用空格隔开，简版docker rmi IMAGE
+docker inspect IMAGE                    # 查看镜像信息，多个用空格隔开，--format可按需显示字段及排版
+docker build PATH                       # 构建镜像，build -f指定Dockerfile路径，-t设置名称和标签
+
+docker run -d IMAGE                     # 基于镜像创建容器并后台运行容器，运行成功则输出容器ID
+docker container ls                     # 查看运行的容器，加上-a参数也显示未运行的容器，简版docker ps
+docker container rm CONTAINER           # 删除未运行容器，多个用空格隔开，rm -f表示强制删除(运行中的)，简版docker rm CONTAINER
+docker logs CONTAINER                   # 查看容器的日志，遇到错误时方便找原因，多个用空格隔开
+docker top CONTAINER                    # 查看容器中运行的进程，后边可带ps参数
+docker exec -it CONTAINER bash          # 在运行中的容器中执行命令，-it粗浅理解为交互式伪终端，不加的话命令执行了就退出
+docker start|stop|restart CONTAINER     # 启动|停止|重启 容器，多个用空格隔开
+docker run -it --rm IMAGE bash          # 基于镜像临时启动一个容器，可测试安装软件，或者满足一些好奇，比如rm -rf /，--rm表示退出就销毁容器
+
+docker run -d \                         # 后台运行
+-p HOST_PORT:CONTAINER_PORT \           # 端口映射，可多个
+-v HOST_PATH:CONTAINER_PATH \           # 挂载文件目录，可多个
+-w WORD_DIR \                           # 工作目录
+-e VARIABLE_NAME=VALUE \                # 环境变量，可多个
+--network NETWORK \                     # 设置网络
+--link TARGET_CONTAINER_NAME:ALIAS \    # 连接其他容器并设置别名，可多个
+--name NEW_CONTAINER_NAME \             # 自定义容器名称
+IMAGE \                                 # 基础镜像
+COMMAND ARG...                          # 启动后执行的命令
+
+docker-compose up -d                    # 包含构建(拉取)镜像、创建容器、启动容器，可单独运行某个或多个，在后边列出服务名称即可
+docker-compose logs SERVICE             # 查看服务容器的日志，遇到错误时方便找原因，多个用空格隔开
+docker-compose ps                       # 查看编排文件下的所有服务容器，可单独显示某个或多个，在后边列出服务名称即可
+docker-compose exec SERVICE bash        # 在运行中的服务容器中执行命令，exec -d表示后台运行，不加参数默认exec -it
+docker-compose start|stop|restart       # 启动|停止|重启 编排文件下的所有服务容器，可单独执行某个或多个，在后边列出服务名称即可
+docker-compose down                     # 停止并移除编排文件下的所有服务容器，包括networks
+
+docker network ls                       # 查看网络列表
+docker network create NETWORK           # 新建网络
+docker network rm NETWORK               # 删除网络，多个用空格隔开
+docker network inspect NETWORK          # 查看网络信息，多个用空格隔开，--format可按需显示字段及排版
 ```
 </details>
 
